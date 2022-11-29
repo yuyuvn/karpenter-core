@@ -734,7 +734,6 @@ var _ = Describe("Replace Nodes", func() {
 		_, err := deprovisioningController.ProcessCluster(ctx)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(cloudProvider.CreateCalls).To(HaveLen(1))
 		// node should be deleted because PDB is from different namespace
 		ExpectNotFound(ctx, env.Client, node1)
 	})

@@ -51,7 +51,6 @@ type PodOptions struct {
 
 type PDBOptions struct {
 	metav1.ObjectMeta
-	Namespace      string
 	Labels         map[string]string
 	MinAvailable   *intstr.IntOrString
 	MaxUnavailable *intstr.IntOrString
