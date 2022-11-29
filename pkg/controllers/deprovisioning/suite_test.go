@@ -670,6 +670,75 @@ var _ = Describe("Replace Nodes", func() {
 		// and can't delete the node due to the PDB
 		ExpectNodeExists(ctx, env.Client, node1.Name)
 	})
+	It("can replace nodes, do not considers PDB from different namespace", func() {
+		labels := map[string]string{
+			"app": "test",
+		}
+		// create our RS so we can link a pod to it
+		rs := test.ReplicaSet()
+		ExpectApplied(ctx, env.Client, rs)
+		Expect(env.Client.Get(ctx, client.ObjectKeyFromObject(rs), rs)).To(Succeed())
+
+		pods := test.Pods(3, test.PodOptions{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: labels,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion:         "apps/v1",
+						Kind:               "ReplicaSet",
+						Name:               rs.Name,
+						UID:                rs.UID,
+						Controller:         ptr.Bool(true),
+						BlockOwnerDeletion: ptr.Bool(true),
+					},
+				}}})
+
+		pdb := test.PodDisruptionBudget(test.PDBOptions{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "different-namespace",
+			},
+			Labels:         labels,
+			MaxUnavailable: fromInt(0),
+			Status: &policyv1.PodDisruptionBudgetStatus{
+				ObservedGeneration: 1,
+				DisruptionsAllowed: 0,
+				CurrentHealthy:     1,
+				DesiredHealthy:     1,
+				ExpectedPods:       1,
+			},
+		})
+
+		prov := test.Provisioner(test.ProvisionerOptions{
+			Consolidation: &v1alpha5.Consolidation{Enabled: ptr.Bool(true)},
+		})
+		node1 := test.Node(test.NodeOptions{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{
+					v1alpha5.ProvisionerNameLabelKey: prov.Name,
+					v1.LabelInstanceTypeStable:       mostExpensiveInstance.Name,
+					v1alpha5.LabelCapacityType:       mostExpensiveOffering.CapacityType,
+					v1.LabelTopologyZone:             mostExpensiveOffering.Zone,
+				}},
+			Allocatable: map[v1.ResourceName]resource.Quantity{
+				v1.ResourceCPU:  resource.MustParse("32"),
+				v1.ResourcePods: resource.MustParse("100"),
+			},
+		})
+
+		ExpectApplied(ctx, env.Client, rs, pods[0], pods[1], pods[2], node1, prov, pdb)
+		ExpectApplied(ctx, env.Client, node1)
+		ExpectReconcileSucceeded(ctx, nodeStateController, client.ObjectKeyFromObject(node1))
+
+		// inform cluster state about the nodes
+		ExpectReconcileSucceeded(ctx, nodeStateController, client.ObjectKeyFromObject(node1))
+		fakeClock.Step(10 * time.Minute)
+		_, err := deprovisioningController.ProcessCluster(ctx)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(cloudProvider.CreateCalls).To(HaveLen(1))
+		// node should be deleted because PDB is from different namespace
+		ExpectNotFound(ctx, env.Client, node1)
+	})
 	It("can replace nodes, considers do-not-consolidate annotation", func() {
 		labels := map[string]string{
 			"app": "test",
