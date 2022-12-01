@@ -230,18 +230,6 @@ func ExpectProvisionedNoBindingWithOffset(offset int, ctx context.Context, c cli
 	return
 }
 
-func ExpectReconcileSucceeded2(ctx context.Context, reconciler reconcile.Reconciler) reconcile.Result {
-	result, err := reconciler.Reconcile(ctx, reconcile.Request{})
-	ExpectWithOffset(1, err).ToNot(HaveOccurred())
-	return result
-}
-
-func ExpectReconcileSucceeded(ctx context.Context, reconciler reconcile.Reconciler, key client.ObjectKey) reconcile.Result {
-	result, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: key})
-	ExpectWithOffset(1, err).ToNot(HaveOccurred())
-	return result
-}
-
 func ExpectReconcileSucceeded(ctx context.Context, reconciler reconcile.Reconciler, key client.ObjectKey) reconcile.Result {
 	result, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: key})
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
