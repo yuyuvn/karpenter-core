@@ -35,10 +35,7 @@ func Namespace(overrides ...NamespaceOptions) *corev1.Namespace {
 			panic(fmt.Sprintf("Failed to merge namespace options: %s", err))
 		}
 	}
-	if options.ObjectMeta.Name == "" {
-		options.ObjectMeta.Name = RandomName()
-	}
 	return &corev1.Namespace{
-		ObjectMeta: ObjectMeta(options.ObjectMeta),
+		ObjectMeta: ObjectMetaWithoutNamespace(options.ObjectMeta),
 	}
 }

@@ -707,7 +707,9 @@ var _ = Describe("Replace Nodes", func() {
 		})
 		namespace := test.Namespace()
 		pdb := test.PodDisruptionBudget(test.PDBOptions{
-			Namespace:      namespace.ObjectMeta.Name,
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace.ObjectMeta.Name,
+			},
 			Labels:         labels,
 			MaxUnavailable: fromInt(0),
 			Status: &policyv1.PodDisruptionBudgetStatus{
@@ -719,7 +721,7 @@ var _ = Describe("Replace Nodes", func() {
 			},
 		})
 
-		ExpectApplied(ctx, env.Client, rs, pod, node, prov, pdb)
+		ExpectApplied(ctx, env.Client, rs, pod, node, prov, namespace, pdb)
 		ExpectMakeNodesReady(ctx, env.Client, node)
 		ExpectReconcileSucceeded(ctx, nodeStateController, client.ObjectKeyFromObject(node))
 		ExpectManualBinding(ctx, env.Client, pod, node)
