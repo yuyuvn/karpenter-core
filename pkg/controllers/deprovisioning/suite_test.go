@@ -694,9 +694,7 @@ var _ = Describe("Replace Nodes", func() {
 				}}})
 
 		pdb := test.PodDisruptionBudget(test.PDBOptions{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "different-namespace",
-			},
+			Namespace:      "different-namespace",
 			Labels:         labels,
 			MaxUnavailable: fromInt(0),
 			Status: &policyv1.PodDisruptionBudgetStatus{
@@ -727,10 +725,10 @@ var _ = Describe("Replace Nodes", func() {
 
 		ExpectApplied(ctx, env.Client, rs, pods[0], pods[1], pods[2], node1, prov, pdb)
 		ExpectApplied(ctx, env.Client, node1)
-		ExpectReconcileSucceeded(ctx, nodeStateController, client.ObjectKeyFromObject(node1))
+		ExpectReconcileSucceeded2(ctx, nodeStateController)
 
 		// inform cluster state about the nodes
-		ExpectReconcileSucceeded(ctx, nodeStateController, client.ObjectKeyFromObject(node1))
+		ExpectReconcileSucceeded2(ctx, nodeStateController)
 		fakeClock.Step(10 * time.Minute)
 		_, err := deprovisioningController.ProcessCluster(ctx)
 		Expect(err).ToNot(HaveOccurred())
