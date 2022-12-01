@@ -719,7 +719,7 @@ var _ = Describe("Replace Nodes", func() {
 			},
 		})
 
-		ExpectApplied(ctx, env.Client, rs, pod, node, prov)
+		ExpectApplied(ctx, env.Client, rs, pod, node, prov, namespace, pdb)
 		ExpectMakeNodesReady(ctx, env.Client, node)
 		ExpectReconcileSucceeded(ctx, nodeStateController, client.ObjectKeyFromObject(node))
 		ExpectManualBinding(ctx, env.Client, pod, node)
